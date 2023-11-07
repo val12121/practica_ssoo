@@ -7,24 +7,21 @@ ARG=""
 args=""
 NATTCH=false
 UUID=$(uuidgen)
-v_op=false
-vall_op=false
 PID_list=()
 new_PID=""
 BBP="====" 
 PATTCH=false
+v_vall=false
 
 PROGNAME=$(basename $0)
 
-attach_me() {  
-  
+attach_me() 
+{  
   PID=$(pgrep -n "$PROG")
-
   if [[ -z $PID ]]; then
     echo "No se encontró el proceso que buscas"
     #exit 1
   fi
-
 }
 
 launch_strace()
@@ -42,8 +39,8 @@ launch_strace()
   echo " "
 }
 
-nattch_me() {
-
+nattch_me() 
+{
   for PROG in ${args[@]}; do
     if [ -x $PROG ]; then 
       mkdir -p /$HOME/.scdebug/$PROG
@@ -56,17 +53,15 @@ nattch_me() {
       echo "$PROG no existe y no es ejecutable"
     fi
   done
-
 }
 
-stop_me() {
-
+stop_me() 
+{
   LaunchProg="$PROG" 
   commName=$COMM 
   echo -n "traced_$commName" > /proc/$$/comm
   kill -SIGSTOP $$
   exec $LaunchProg
-
 }
 
 usage()
@@ -77,7 +72,6 @@ usage()
 
 kill_me() 
 {
-
   PID_list=$(ps -u $USER --no-headers -o pid,stime --sort=stime | awk '{print $1}' | tr '\n' ' ')
   kill -15 $PID_list
   sleep 3
@@ -86,22 +80,18 @@ kill_me()
     if [ $Tracer_PID -ne 0 ] && [ -n $Tracer_PID ]; then 
       kill -9 $Tracer_PID
     fi
-
   done
   
   PID_list=$(ps -u $USER --no-headers -o pid,stime --sort=stime | awk '{print $1}' | tr '\n' ' ')
   kill -9 $PID_list
-   
   # No hace falta el $() en ninguno de los casos porque no lo estamos asignando a ninguna variable
-
 }
 
-pattch_me() {
-
+pattch_me() 
+{
   for new_PID in ${args[@]}; do 
       PROGM=$(ps -p $new_PID -o comm=)  
     if [ -x $PROGM ]; then #Programa existe y es ejecutable
-      echo "P"
       mkdir -p /$HOME/.scdebug/$PROGM 
       UUID=$(uuidgen)
       #strace $STR -p $new_PID -o $HOME/.scdebug/$PROGM/trace_$UUID.txt &
@@ -109,7 +99,38 @@ pattch_me() {
       echo "El proceso que se ha pasado pertenece al ejecutable: $PROGM"
     fi
   done
+}
 
+v_op() {
+  for PROG in ${args[@]}; do
+    if [ -x $PROG ]; then 
+      echo "El programa existe y es ejecutable"
+        Trace=$(ls $HOME/.scdebug/$PROG --sort=time | head -n 1)
+        Time_trace=$Trace
+        echo "    
+        ================= COMMAND: $PROG =======================
+        = TRACE FILE: $Trace =
+        =========== TIME: $(date -r $HOME/.scdebug/$PROG/$Time_trace) ===========
+       "  
+      # El -r muestra la fecha de la última modificacion
+    fi
+  done
+}
+
+vall_op() {
+
+  for PROG in ${args[@]}; do
+    if [ -x $PROG ] && [ $PROG != -* ]; then
+      Trace_list=$(ls $HOME/.scdebug/$PROG --sort=time)
+      for PROGM in ${Trace_list[@]}; do
+        echo "
+        =================== COMMAND: $PROG =======================
+        = TRACE FILE: $PROGM =
+        =========== TIME: $(date -r $HOME/.scdebug/$PROG/$PROGM) ===========
+        "  
+      done
+    fi
+  done
 }
 
 while [[ $# -gt 0 ]]; do
@@ -117,13 +138,13 @@ while [[ $# -gt 0 ]]; do
 
     -h | --help )
      	usage
-     	;;
+    ;;
   
     -sto)
      	shift
     	STR=$1
     	shift
-    	;;
+    ;;
 
     -nattch)
       NATTCH=true
@@ -131,15 +152,21 @@ while [[ $# -gt 0 ]]; do
       args=("$@")
       nattch_me
       shift
-      ;;   
+    ;;   
 
     -v)
-      v_op=true
+      shift
+      args=("$@")
+      v_op
+      v_vall=true
       shift
     ;;
 
     -vall)
-      vall_op=true
+      shift
+      args=("$@")
+      vall_op
+      v_vall=true
       shift
     ;;
 
@@ -171,39 +198,24 @@ while [[ $# -gt 0 ]]; do
       shift
     	args=("$@")
     	break
-    	;;
+  	;;
 	esac
 done
 
-if [[ -n "$PROG" ]]; then
-  
-  if [[ "$v_op" == true ]]; then
+if [[ -n "$PROG" ]]; then  
 
-    Trace=$(ls $HOME/.scdebug/$PROG --sort=time | head -n 1)
-    Time_trace=$Trace
-
-    echo "    
-            =============== COMMAND: -v =======================
-        === TRACE FILE: $Trace ===
-              ===== TIME: $(date -r $HOME/.scdebug/$PROG/$Time_trace) ====="
-
-  elif [[ "$vall_op" == true ]]; then 
-  
-    echo "Por hacer X"
-
-  else
-    
-    if [ "$NATTCH" == false ] && [ "$PATTCH" == false ]; then
-      if [ -x $PROG ]; then 
-        echo "El programa $PROG existe y es ejecutable"
-        mkdir -p /$HOME/.scdebug/$PROG
-        strace $STR -o $HOME/.scdebug/$PROG/trace_$(uuidgen).txt ./$PROG "$args" &
-        #launch_strace $PID $HOME/.scdebug/$PROG/trace_$UUID.txt ./$PROG "$args" &
-      fi
+  if [ "$NATTCH" == false ] && [ "$PATTCH" == false ] && [ "$v_vall" == false ]; then
+    if [ -x $PROG ]; then 
+      echo "El programa $PROG existe y es ejecutable"
+      mkdir -p /$HOME/.scdebug/$PROG
+      strace $STR -o $HOME/.scdebug/$PROG/trace_$(uuidgen).txt ./$PROG "$args" &
+      #launch_strace $PID $HOME/.scdebug/$PROG/trace_$UUID.txt ./$PROG "$args" &
     fi
+  fi
 
-    PID_list=$(ps -u $USER --no-headers -o pid,stime --sort=stime | awk '{print $1}' | tr '\n' ' ')
-
+  PID_list=$(ps -u $USER --no-headers -o pid,stime --sort=stime | awk '{print $1}' | tr '\n' ' ')
+   
+  if [ "$v_vall" == false ]; then
     for new_PID in ${PID_list[@]}; do
       if [ -d /proc/$new_PID ]; then
         #Por hacer un if que me aclare si un proceso se está ejecutando o no
@@ -217,7 +229,6 @@ if [[ -n "$PROG" ]]; then
       fi
     done
   fi 
-
 else 
 	echo "Error: Se debe especificar un programa
 	      Haga -h o -help para ayuda"
