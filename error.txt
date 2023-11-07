@@ -1,0 +1,10 @@
+--- Error en el 13 con salida de error = 1 ---
+--- Error en el 45678 con salida de error = 1 ---
+--- Error en el 46578 con salida de error = 1 ---
+--- Error en el 46583 con salida de error = 1 ---
+--- Error en el 13 con salida de error = 1 ---
+--- Error en el 13 con salida de error = 1 ---
+--- Error en el 13 con salida de error = 1 ---
+--- Error en el 13 con salida de error = 1 ---
+--- Error en el 13 con salida de error = 1 ---
+--- Error en el 13 con salida de error = 1 ---

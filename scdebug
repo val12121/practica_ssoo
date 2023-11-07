@@ -15,8 +15,7 @@ v_vall=false
 
 PROGNAME=$(basename $0)
 
-attach_me() 
-{  
+attach_me() {  
   PID=$(pgrep -n "$PROG")
   if [[ -z $PID ]]; then
     echo "No se encontró el proceso que buscas"
@@ -24,8 +23,7 @@ attach_me()
   fi
 }
 
-launch_strace()
-{  
+launch_strace() {  
   echo " "
   strace -p $1 -o $2 
   salida_error=$?
@@ -39,8 +37,7 @@ launch_strace()
   echo " "
 }
 
-nattch_me() 
-{
+nattch_me() {
   for PROG in ${args[@]}; do
     if [ -x $PROG ]; then 
       mkdir -p /$HOME/.scdebug/$PROG
@@ -55,8 +52,7 @@ nattch_me()
   done
 }
 
-stop_me() 
-{
+stop_me() {
   LaunchProg="$PROG" 
   commName=$COMM 
   echo -n "traced_$commName" > /proc/$$/comm
@@ -64,14 +60,22 @@ stop_me()
   exec $LaunchProg
 }
 
-usage()
-{
+continue_me() {
+
+  continue_list=$(ps | pgrep traced_* | tr -s " " | cut -f2 -d " ")
+  for PID in ${continue_list[@]}; do
+    launch_strace $PID prueba.txt &
+    sleep 0.1
+    kill -SIGCONT $PID
+  done
+}
+
+usage() {
   echo "usage: scdebug [-h] [-sto arg] [-v | -vall] [-nattch progtoattach] [prog [arg1 …]"
   exit 0
 }
 
-kill_me() 
-{
+kill_me() {
   PID_list=$(ps -u $USER --no-headers -o pid,stime --sort=stime | awk '{print $1}' | tr '\n' ' ')
   kill -15 $PID_list
   sleep 3
@@ -87,8 +91,7 @@ kill_me()
   # No hace falta el $() en ninguno de los casos porque no lo estamos asignando a ninguna variable
 }
 
-pattch_me() 
-{
+pattch_me() {
   for new_PID in ${args[@]}; do 
       PROGM=$(ps -p $new_PID -o comm=)  
     if [ -x $PROGM ]; then #Programa existe y es ejecutable
@@ -178,6 +181,12 @@ while [[ $# -gt 0 ]]; do
       shift
       args=("$@") 
       stop_me 
+    ;;
+
+    -g)
+      shift
+      continue_me
+      exit 0
     ;;
 
     -k)
