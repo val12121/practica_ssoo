@@ -1,0 +1,7 @@
+#!/bin/bash
+
+sleep 40 
+
+echo "hello girl"
+
+
